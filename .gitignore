@@ -1,0 +1,27 @@
+# Database
+database/okayreads.db
+database/okayreads.db-journal
+*.db
+*.db-journal
+
+# Environment variables
+.env
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+
+# Temporary files
+tmp/
+temp/
+

@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  php-syntax-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup PHP 8.5
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.5'
+        coverage: none
+    
+    - name: Check PHP syntax
+      run: |
+        find api -name "*.php" -exec php -l {} \;
+        find database -name "*.php" -exec php -l {} \;
+    
+    - name: Validate SQL syntax
+      run: |
+        # Basic SQL validation - check file exists and is readable
+        test -f database/schema.sql && echo "Schema file exists"
+

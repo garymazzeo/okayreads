@@ -25,12 +25,23 @@ class Database {
         
         if ($dbType === 'sqlite') {
             $dbPath = $_ENV['DB_PATH'] ?? __DIR__ . '/../../database/okayreads.db';
+            
+            // Ensure directory exists
+            $dbDir = dirname($dbPath);
+            if (!is_dir($dbDir)) {
+                mkdir($dbDir, 0755, true);
+            }
+            
             $dsn = 'sqlite:' . $dbPath;
             
             try {
                 $this->connection = new PDO($dsn);
                 $this->connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
                 $this->connection->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+                
+                // Auto-initialize database if needed
+                $this->initializeDatabase();
+                
             } catch (PDOException $e) {
                 throw new Exception("Database connection failed: " . $e->getMessage());
             }
@@ -75,6 +86,27 @@ class Database {
     // Prevent unserialization
     public function __wakeup() {
         throw new Exception("Cannot unserialize singleton");
+    }
+    
+    /**
+     * Initialize database schema if tables don't exist
+     */
+    private function initializeDatabase(): void {
+        try {
+            // Check if books table exists
+            $stmt = $this->connection->query("SELECT name FROM sqlite_master WHERE type='table' AND name='books'");
+            if ($stmt->fetch() === false) {
+                // Database is empty, run schema
+                $schemaFile = __DIR__ . '/../../database/schema.sql';
+                if (file_exists($schemaFile)) {
+                    $schema = file_get_contents($schemaFile);
+                    $this->connection->exec($schema);
+                }
+            }
+        } catch (PDOException $e) {
+            // Ignore errors - table might already exist or schema might be invalid
+            // This prevents crashes if someone manually modified the DB
+        }
     }
 }
 

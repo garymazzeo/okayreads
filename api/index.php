@@ -8,7 +8,11 @@ error_reporting(E_ALL);
 ini_set('display_errors', '0'); // Set to '1' for development
 
 // Load environment variables
-$envFile = __DIR__ . '/../.env';
+// Try parent directory first (more secure), then current directory
+$envFile = __DIR__ . '/../../.env';  // Parent of project root
+if (!file_exists($envFile)) {
+    $envFile = __DIR__ . '/../.env';  // Fallback to project root
+}
 if (file_exists($envFile)) {
     $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     foreach ($lines as $line) {

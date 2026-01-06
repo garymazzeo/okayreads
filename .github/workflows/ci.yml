@@ -1,31 +1,59 @@
-name: CI
+name: CI and Deploy
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   php-syntax-check:
     runs-on: ubuntu-latest
-    
-    steps:
-    - uses: actions/checkout@v3
-    
-    - name: Setup PHP 8.5
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: '8.5'
-        coverage: none
-    
-    - name: Check PHP syntax
-      run: |
-        find api -name "*.php" -exec php -l {} \;
-        find database -name "*.php" -exec php -l {} \;
-    
-    - name: Validate SQL syntax
-      run: |
-        # Basic SQL validation - check file exists and is readable
-        test -f database/schema.sql && echo "Schema file exists"
 
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup PHP 8.5
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.5"
+          coverage: none
+
+      - name: Check PHP syntax
+        run: |
+          find api -name "*.php" -exec php -l {} \;
+          find database -name "*.php" -exec php -l {} \;
+
+      - name: Validate SQL syntax
+        run: |
+          # Basic SQL validation - check file exists and is readable
+          test -f database/schema.sql && echo "Schema file exists"
+
+  deploy:
+    needs: php-syntax-check
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: FTP Deploy
+        uses: SamKirkland/FTP-Deploy-Action@4.3.3
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: ${{ secrets.FTP_REMOTE_DIR }}
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            **/.env
+            **/.env.example
+            **/database/*.db
+            **/database/*.db-journal
+            **/.DS_Store
+            **/.idea/**
+            **/.vscode/**
+            **/*.log
+            **/.github/**

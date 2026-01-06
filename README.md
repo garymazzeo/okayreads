@@ -102,20 +102,37 @@ The API is RESTful and returns JSON responses.
 
 ### Automatic Deployment via GitHub Actions
 
-The project includes a GitHub Actions workflow that automatically deploys to your FTP server when you push to the `main` branch.
+The project includes a GitHub Actions workflow that automatically deploys to your VPS via SSH when you push to the `main` branch or trigger the workflow manually.
 
 **Setup Instructions:**
 
-1. Go to your GitHub repository settings
-2. Navigate to **Secrets and variables** → **Actions**
-3. Add the following secrets:
+1. **Generate an SSH key pair** (if you don't have one):
+   ```bash
+   ssh-keygen -t ed25519 -C "github-actions-deploy" -f ~/.ssh/github_deploy_key
+   ```
 
-   - `FTP_SERVER`: Your FTP server hostname (e.g., `ftp.example.com`)
-   - `FTP_USERNAME`: Your FTP username
-   - `FTP_PASSWORD`: Your FTP password
-   - `FTP_REMOTE_DIR`: Remote directory path (e.g., `/public_html` or `/www`)
+2. **Add the public key to your VPS:**
+   ```bash
+   ssh-copy-id -i ~/.ssh/github_deploy_key.pub user@your-vps-host
+   ```
+   Or manually add the public key content to `~/.ssh/authorized_keys` on your VPS.
 
-4. Push to the `main` branch to trigger deployment
+3. **Go to your GitHub repository settings:**
+   - Navigate to **Secrets and variables** → **Actions**
+   - Add the following secrets:
+
+     - `VPS_SSH_KEY`: The **private** SSH key content (the entire content of `~/.ssh/github_deploy_key`, including `-----BEGIN` and `-----END` lines)
+     - `VPS_HOST`: Your VPS hostname or IP address (e.g., `example.com` or `192.168.1.100`)
+     - `VPS_USER`: SSH username (e.g., `deploy` or `www-data`)
+     - `VPS_DEPLOY_PATH`: Remote directory path where files should be deployed (e.g., `/var/www/html` or `/home/user/public_html`)
+
+4. **Push to the `main` branch** to trigger automatic deployment, or manually trigger the workflow from the Actions tab.
+
+**Deployment Features:**
+- Automatic backup of existing files before deployment
+- Secure SSH key-based authentication
+- Automatic permission setting (644 for PHP files, 755 for directories)
+- Excludes sensitive files (`.env`, database files, `.git`, etc.) from deployment
 
 **Note:** The workflow excludes sensitive files (`.env`, database files, etc.) from deployment. Make sure to configure your `.env` file directly on the server.
 
@@ -128,7 +145,7 @@ For maximum security, place your `.env` file outside the web root directory:
 ```
 /home/youruser/
 ├── .env                    ← Recommended: Outside web root
-└── public_html/            ← Your FTP_REMOTE_DIR
+└── public_html/            ← Your VPS_DEPLOY_PATH
     ├── api/
     ├── public/
     └── ...

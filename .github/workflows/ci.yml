@@ -2,9 +2,9 @@ name: CI and Deploy
 
 on:
   push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+    branches:
+      - main
+  workflow_dispatch: # Allow manual trigger
 
 jobs:
   php-syntax-check:
@@ -35,25 +35,83 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: FTP Deploy
-        uses: SamKirkland/FTP-Deploy-Action@4.3.3
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          server-dir: ${{ secrets.FTP_REMOTE_DIR }}
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/node_modules/**
-            **/.env
-            **/.env.example
-            **/database/*.db
-            **/database/*.db-journal
-            **/.DS_Store
-            **/.idea/**
-            **/.vscode/**
-            **/*.log
-            **/.github/**
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Verify VPS access and permissions
+        run: |
+          ssh -i ~/.ssh/deploy_key \
+            -o IdentitiesOnly=yes \
+            -o PreferredAuthentications=publickey \
+            -o PasswordAuthentication=no \
+            -o StrictHostKeyChecking=no \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+            "test -d ${{ secrets.VPS_DEPLOY_PATH }} || (mkdir -p ${{ secrets.VPS_DEPLOY_PATH }} && echo 'Directory created') && \
+             test -w ${{ secrets.VPS_DEPLOY_PATH }} && echo 'Directory is writable' || (echo 'ERROR: Directory is not writable' && exit 1)"
+
+      - name: Create deployment package
+        run: |
+          # Create a temporary directory excluding sensitive files
+          mkdir -p deploy
+          rsync -av --exclude='.git' \
+            --exclude='.gitignore' \
+            --exclude='.github' \
+            --exclude='*.md' \
+            --exclude='.env' \
+            --exclude='.env.example' \
+            --exclude='database/*.db' \
+            --exclude='database/*.db-journal' \
+            --exclude='.DS_Store' \
+            --exclude='.idea' \
+            --exclude='.vscode' \
+            --exclude='*.log' \
+            --exclude='node_modules' \
+            ./ deploy/
+
+      - name: Deploy to VPS
+        run: |
+          # Create backup of current deployment (only if directory has files)
+          ssh -i ~/.ssh/deploy_key \
+            -o IdentitiesOnly=yes \
+            -o PreferredAuthentications=publickey \
+            -o PasswordAuthentication=no \
+            -o StrictHostKeyChecking=no \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+            "if [ -d '${{ secrets.VPS_DEPLOY_PATH }}' ] && [ \"\$(ls -A ${{ secrets.VPS_DEPLOY_PATH }} 2>/dev/null)\" ]; then \
+              cd ${{ secrets.VPS_DEPLOY_PATH }} && \
+              tar -czf ../backup-\$(date +%Y%m%d-%H%M%S).tar.gz . 2>/dev/null && \
+              echo 'Backup created'; \
+            else \
+              echo 'No existing files to backup'; \
+            fi"
+
+          # Upload files
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o PreferredAuthentications=publickey -o PasswordAuthentication=no -o StrictHostKeyChecking=no" \
+            deploy/ \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_DEPLOY_PATH }}/
+
+      - name: Set permissions
+        run: |
+          ssh -i ~/.ssh/deploy_key \
+            -o IdentitiesOnly=yes \
+            -o PreferredAuthentications=publickey \
+            -o PasswordAuthentication=no \
+            -o StrictHostKeyChecking=no \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+            "cd ${{ secrets.VPS_DEPLOY_PATH }} && \
+             find . -type f -name '*.php' -exec chmod 644 {} \; && \
+             find . -type d -exec chmod 755 {} \; && \
+             echo 'Permissions set successfully'"
+
+      - name: Cleanup
+        run: |
+          rm -rf deploy
+          rm -f ~/.ssh/deploy_key

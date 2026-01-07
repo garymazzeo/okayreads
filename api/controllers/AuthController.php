@@ -33,21 +33,23 @@ class AuthController {
             return;
         }
         
-        $userModel = new User();
-        
-        // Check if username already exists
-        if ($userModel->findByUsername($data['username'])) {
-            Response::error('Username already taken');
-            return;
-        }
-        
-        // Check if email already exists
-        if ($userModel->findByEmail($data['email'])) {
-            Response::error('Email already registered');
-            return;
-        }
-        
         try {
+            $userModel = new User();
+            
+            // Check if username already exists
+            $existingUser = $userModel->findByUsername($data['username']);
+            if ($existingUser) {
+                Response::error('Username already taken');
+                return;
+            }
+            
+            // Check if email already exists
+            $existingEmail = $userModel->findByEmail($data['email']);
+            if ($existingEmail) {
+                Response::error('Email already registered');
+                return;
+            }
+            
             $userId = $userModel->create([
                 'username' => trim($data['username']),
                 'email' => trim($data['email']),
@@ -56,10 +58,20 @@ class AuthController {
             
             // Auto-login after registration
             $user = $userModel->find($userId);
+            if (!$user) {
+                Response::error('Failed to retrieve created user', 500);
+                return;
+            }
+            
             self::setSession($user);
             
             Response::success($userModel->getSafe($user), 'Registration successful');
+        } catch (PDOException $e) {
+            // Database error - likely table doesn't exist
+            error_log('Registration PDO error: ' . $e->getMessage());
+            Response::error('Database error. Please ensure the users table exists.', 500);
         } catch (Exception $e) {
+            error_log('Registration error: ' . $e->getMessage());
             Response::error('Registration failed: ' . $e->getMessage(), 500);
         }
     }
@@ -80,29 +92,37 @@ class AuthController {
             return;
         }
         
-        $userModel = new User();
-        
-        // Try to find by username or email
-        $user = $userModel->findByUsername($data['username']);
-        if (!$user) {
-            $user = $userModel->findByEmail($data['username']);
+        try {
+            $userModel = new User();
+            
+            // Try to find by username or email
+            $user = $userModel->findByUsername($data['username']);
+            if (!$user) {
+                $user = $userModel->findByEmail($data['username']);
+            }
+            
+            if (!$user) {
+                Response::error('Invalid username or password');
+                return;
+            }
+            
+            // Verify password
+            if (!$userModel->verifyPassword($data['password'], $user['password_hash'])) {
+                Response::error('Invalid username or password');
+                return;
+            }
+            
+            // Set session
+            self::setSession($user);
+            
+            Response::success($userModel->getSafe($user), 'Login successful');
+        } catch (PDOException $e) {
+            error_log('Login PDO error: ' . $e->getMessage());
+            Response::error('Database error. Please ensure the users table exists.', 500);
+        } catch (Exception $e) {
+            error_log('Login error: ' . $e->getMessage());
+            Response::error('Login failed: ' . $e->getMessage(), 500);
         }
-        
-        if (!$user) {
-            Response::error('Invalid username or password');
-            return;
-        }
-        
-        // Verify password
-        if (!$userModel->verifyPassword($data['password'], $user['password_hash'])) {
-            Response::error('Invalid username or password');
-            return;
-        }
-        
-        // Set session
-        self::setSession($user);
-        
-        Response::success($userModel->getSafe($user), 'Login successful');
     }
     
     /**

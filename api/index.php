@@ -7,6 +7,24 @@
 error_reporting(E_ALL);
 ini_set('display_errors', '0'); // Set to '1' for development
 
+// Start output buffering to catch any accidental output
+ob_start();
+
+// Set error handler to return JSON
+set_error_handler(function($severity, $message, $file, $line) {
+    if (error_reporting() === 0) {
+        return false;
+    }
+    ob_clean();
+    http_response_code(500);
+    header('Content-Type: application/json');
+    echo json_encode([
+        'success' => false,
+        'error' => 'Server error: ' . $message
+    ]);
+    exit;
+}, E_ALL & ~E_NOTICE);
+
 // Start session
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -55,7 +73,19 @@ require_once __DIR__ . '/Router.php';
 require_once __DIR__ . '/routes/api.php';
 
 // Initialize router
-$router = new Router();
-setupRoutes($router);
-$router->dispatch();
+try {
+    $router = new Router();
+    setupRoutes($router);
+    $router->dispatch();
+} catch (Throwable $e) {
+    ob_clean();
+    error_log('Fatal error: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+    http_response_code(500);
+    header('Content-Type: application/json');
+    echo json_encode([
+        'success' => false,
+        'error' => 'Server error occurred'
+    ]);
+    exit;
+}
 

@@ -9,6 +9,11 @@ class Response {
      * Send JSON response
      */
     public static function json(array $data, int $statusCode = 200): void {
+        // Clear any output buffer to ensure clean JSON response
+        if (ob_get_level() > 0) {
+            ob_clean();
+        }
+        
         http_response_code($statusCode);
         header('Content-Type: application/json; charset=utf-8');
         header('Access-Control-Allow-Origin: *');

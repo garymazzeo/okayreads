@@ -9,7 +9,7 @@ ini_set('display_errors', '0'); // Set to '1' for development
 
 // Load environment variables
 // Try parent directory first (more secure), then current directory
-$envFile = __DIR__ . '/../../.env';  // Parent of project root
+$envFile = __DIR__ . '/../../config/okayreads/.env';  // Parent of project root
 if (!file_exists($envFile)) {
     $envFile = __DIR__ . '/../.env';  // Fallback to project root
 }

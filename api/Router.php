@@ -63,6 +63,7 @@ class Router {
         }
         
         foreach ($this->routes as $route) {
+            $params = [];
             if ($route['method'] === $method && $this->matchRoute($route['path'], $uri, $params)) {
                 try {
                     call_user_func($route['handler'], $params);

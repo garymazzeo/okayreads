@@ -1,0 +1,18 @@
+# Prevent access to .env files
+<FilesMatch "^\.env">
+    Require all denied
+</FilesMatch>
+
+# Rewrite rules for API and frontend
+RewriteEngine On
+
+# Handle API routes
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^api/(.*)$ api/index.php [L,QSA]
+
+# Handle frontend (serve index.html for all non-file requests)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(?!api/).*$ index.html [L]
+

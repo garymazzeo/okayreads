@@ -7,7 +7,12 @@ require_once __DIR__ . '/../services/ImportService.php';
 
 class ImportController {
     private static function getUserId(): int {
-        return (int)($_ENV['DEFAULT_USER_ID'] ?? 1);
+        $user = AuthController::getCurrentUser();
+        if (!$user) {
+            Response::error('Not authenticated', 401);
+            exit;
+        }
+        return (int)$user['id'];
     }
     
     /**

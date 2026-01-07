@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OkayReads - Your Personal Reading Tracker</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>OkayReads</h1>
+            <nav id="main-nav" class="hidden">
+                <button class="nav-btn active" data-view="books">My Books</button>
+                <button class="nav-btn" data-view="add">Add Book</button>
+                <button class="nav-btn" data-view="import">Import/Export</button>
+                <button class="nav-btn" id="logout-btn">Logout</button>
+            </nav>
+            <div id="user-info" class="hidden"></div>
+        </header>
+
+        <main>
+            <!-- Login/Register View -->
+            <div id="auth-view" class="view active">
+                <div class="auth-container">
+                    <h2>Welcome to OkayReads</h2>
+                    <div class="auth-tabs">
+                        <button class="tab-btn active" data-tab="login">Login</button>
+                        <button class="tab-btn" data-tab="register">Register</button>
+                    </div>
+
+                    <!-- Login Tab -->
+                    <div id="login-tab" class="tab-content active">
+                        <form id="login-form">
+                            <div class="form-group">
+                                <label for="login-username">Username or Email</label>
+                                <input type="text" id="login-username" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="login-password">Password</label>
+                                <input type="password" id="login-password" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Login</button>
+                            <div id="login-error" class="error hidden"></div>
+                        </form>
+                    </div>
+
+                    <!-- Register Tab -->
+                    <div id="register-tab" class="tab-content">
+                        <form id="register-form">
+                            <div class="form-group">
+                                <label for="register-username">Username</label>
+                                <input type="text" id="register-username" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="register-email">Email</label>
+                                <input type="email" id="register-email" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="register-password">Password</label>
+                                <input type="password" id="register-password" required minlength="6">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Register</button>
+                            <div id="register-error" class="error hidden"></div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <!-- Books View -->
+            <div id="books-view" class="view">
+                <div class="view-header">
+                    <h2>My Books</h2>
+                    <div class="filters">
+                        <select id="status-filter">
+                            <option value="">All</option>
+                            <option value="to_read">To Read</option>
+                            <option value="reading">Reading</option>
+                            <option value="finished">Finished</option>
+                            <option value="dropped">Dropped</option>
+                        </select>
+                        <input type="text" id="search-input" placeholder="Search books...">
+                    </div>
+                </div>
+                <div id="books-list" class="books-grid"></div>
+                <div id="loading" class="loading hidden">Loading...</div>
+                <div id="empty-state" class="empty-state hidden">
+                    <p>No books found. Add your first book!</p>
+                </div>
+            </div>
+
+            <!-- Add Book View -->
+            <div id="add-view" class="view">
+                <h2>Add Book</h2>
+                <div class="add-book-tabs">
+                    <button class="tab-btn active" data-tab="search">Search Online</button>
+                    <button class="tab-btn" data-tab="manual">Manual Entry</button>
+                </div>
+
+                <!-- Search Tab -->
+                <div id="search-tab" class="tab-content active">
+                    <form id="search-form">
+                        <input type="text" id="search-query" placeholder="Search by title, author, or ISBN..." required>
+                        <button type="submit">Search</button>
+                    </form>
+                    <div id="search-results" class="search-results"></div>
+                </div>
+
+                <!-- Manual Entry Tab -->
+                <div id="manual-tab" class="tab-content">
+                    <form id="manual-book-form">
+                        <div class="form-group">
+                            <label for="title">Title *</label>
+                            <input type="text" id="title" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="authors">Authors (comma-separated)</label>
+                            <input type="text" id="authors" placeholder="e.g., J.K. Rowling, Jane Austen">
+                        </div>
+                        <div class="form-group">
+                            <label for="isbn">ISBN</label>
+                            <input type="text" id="isbn">
+                        </div>
+                        <div class="form-group">
+                            <label for="description">Description</label>
+                            <textarea id="description" rows="4"></textarea>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="page-count">Page Count</label>
+                                <input type="number" id="page-count">
+                            </div>
+                            <div class="form-group">
+                                <label for="published-date">Published Date</label>
+                                <input type="text" id="published-date" placeholder="YYYY or YYYY-MM-DD">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="cover-url">Cover Image URL</label>
+                            <input type="url" id="cover-url">
+                        </div>
+                        <button type="submit">Add Book</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Import/Export View -->
+            <div id="import-view" class="view">
+                <h2>Import / Export</h2>
+                
+                <div class="import-section">
+                    <h3>Import from Goodreads</h3>
+                    <p>Export your Goodreads library as CSV and upload it here.</p>
+                    <form id="goodreads-import-form" enctype="multipart/form-data">
+                        <input type="file" id="goodreads-file" accept=".csv" required>
+                        <button type="submit">Import CSV</button>
+                    </form>
+                    <div id="goodreads-import-result" class="import-result"></div>
+                </div>
+
+                <div class="import-section">
+                    <h3>Import ISBN List</h3>
+                    <p>Upload a text file with one ISBN per line.</p>
+                    <form id="isbn-import-form" enctype="multipart/form-data">
+                        <input type="file" id="isbn-file" accept=".txt,.csv" required>
+                        <button type="submit">Import ISBNs</button>
+                    </form>
+                    <div id="isbn-import-result" class="import-result"></div>
+                </div>
+
+                <div class="export-section">
+                    <h3>Export Data</h3>
+                    <p>Download your library as a CSV file.</p>
+                    <a href="/api/export/csv" class="btn btn-primary" download>Export CSV</a>
+                </div>
+            </div>
+
+            <!-- Book Detail Modal -->
+            <div id="book-modal" class="modal hidden">
+                <div class="modal-content">
+                    <span class="close-modal">&times;</span>
+                    <div id="book-detail"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>
+

@@ -30,23 +30,52 @@ class BookSearchService {
     private function searchGoogleBooks(string $query): array {
         $url = self::GOOGLE_BOOKS_API . '?q=' . urlencode($query) . '&maxResults=' . self::MAX_RESULTS;
         
-        $context = stream_context_create([
-            'http' => [
-                'method' => 'GET',
-                'timeout' => 10,
-                'user_agent' => 'OkayReads/1.0'
-            ]
-        ]);
-        
-        $response = @file_get_contents($url, false, $context);
-        
-        if ($response === false) {
-            return [];
+        // Try cURL first (more reliable)
+        if (function_exists('curl_init')) {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+            curl_setopt($ch, CURLOPT_USERAGENT, 'OkayReads/1.0');
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+            
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $error = curl_error($ch);
+            curl_close($ch);
+            
+            if ($response === false || $httpCode !== 200) {
+                error_log("Google Books API error: HTTP $httpCode - $error");
+                return [];
+            }
+        } else {
+            // Fallback to file_get_contents
+            $context = stream_context_create([
+                'http' => [
+                    'method' => 'GET',
+                    'timeout' => 10,
+                    'user_agent' => 'OkayReads/1.0',
+                    'ignore_errors' => true
+                ]
+            ]);
+            
+            $response = @file_get_contents($url, false, $context);
+            
+            if ($response === false) {
+                error_log("Google Books API error: file_get_contents failed");
+                return [];
+            }
         }
         
         $data = json_decode($response, true);
         
-        if (!isset($data['items'])) {
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            error_log("Google Books API error: JSON decode failed - " . json_last_error_msg());
+            return [];
+        }
+        
+        if (!isset($data['items']) || !is_array($data['items'])) {
             return [];
         }
         
@@ -107,23 +136,52 @@ class BookSearchService {
     private function searchOpenLibrary(string $query): array {
         $url = self::OPEN_LIBRARY_API . '?q=' . urlencode($query) . '&limit=' . self::MAX_RESULTS;
         
-        $context = stream_context_create([
-            'http' => [
-                'method' => 'GET',
-                'timeout' => 10,
-                'user_agent' => 'OkayReads/1.0'
-            ]
-        ]);
-        
-        $response = @file_get_contents($url, false, $context);
-        
-        if ($response === false) {
-            return [];
+        // Try cURL first (more reliable)
+        if (function_exists('curl_init')) {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+            curl_setopt($ch, CURLOPT_USERAGENT, 'OkayReads/1.0');
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+            
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $error = curl_error($ch);
+            curl_close($ch);
+            
+            if ($response === false || $httpCode !== 200) {
+                error_log("Open Library API error: HTTP $httpCode - $error");
+                return [];
+            }
+        } else {
+            // Fallback to file_get_contents
+            $context = stream_context_create([
+                'http' => [
+                    'method' => 'GET',
+                    'timeout' => 10,
+                    'user_agent' => 'OkayReads/1.0',
+                    'ignore_errors' => true
+                ]
+            ]);
+            
+            $response = @file_get_contents($url, false, $context);
+            
+            if ($response === false) {
+                error_log("Open Library API error: file_get_contents failed");
+                return [];
+            }
         }
         
         $data = json_decode($response, true);
         
-        if (!isset($data['docs']) || empty($data['docs'])) {
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            error_log("Open Library API error: JSON decode failed - " . json_last_error_msg());
+            return [];
+        }
+        
+        if (!isset($data['docs']) || !is_array($data['docs']) || empty($data['docs'])) {
             return [];
         }
         

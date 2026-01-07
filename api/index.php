@@ -7,6 +7,11 @@
 error_reporting(E_ALL);
 ini_set('display_errors', '0'); // Set to '1' for development
 
+// Start session
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 // Load environment variables
 // Try parent directory first (more secure), then current directory
 $envFile = __DIR__ . '/../../config/okayreads/.env';  // Parent of project root

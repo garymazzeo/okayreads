@@ -49,6 +49,16 @@ CREATE TABLE IF NOT EXISTS user_books (
     UNIQUE(user_id, book_id)
 );
 
+-- Users table
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL UNIQUE,
+    email TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 -- Tags table
 CREATE TABLE IF NOT EXISTS tags (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -72,4 +82,6 @@ CREATE INDEX IF NOT EXISTS idx_authors_name ON authors(name);
 CREATE INDEX IF NOT EXISTS idx_user_books_user_id ON user_books(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_books_status ON user_books(status);
 CREATE INDEX IF NOT EXISTS idx_user_books_book_id ON user_books(book_id);
+CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 

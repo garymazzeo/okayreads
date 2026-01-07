@@ -5,25 +5,37 @@
 
 // Error reporting
 error_reporting(E_ALL);
-ini_set('display_errors', '0'); // Set to '1' for development
+// Temporarily enable detailed errors for debugging
+ini_set('display_errors', '1'); // Set to '0' for production
 
 // Start output buffering to catch any accidental output
 ob_start();
 
-// Set error handler to return JSON
+// Set error handler to return JSON (only for fatal errors that aren't caught)
 set_error_handler(function($severity, $message, $file, $line) {
-    if (error_reporting() === 0) {
+    // Only handle errors that would stop execution
+    if (!(error_reporting() & $severity)) {
         return false;
     }
+    
+    // Don't handle notices and warnings in production
+    if ($severity === E_NOTICE || $severity === E_WARNING) {
+        error_log("PHP $severity: $message in $file:$line");
+        return false; // Let PHP handle it normally
+    }
+    
+    // For fatal errors, return JSON
     ob_clean();
     http_response_code(500);
     header('Content-Type: application/json');
     echo json_encode([
         'success' => false,
-        'error' => 'Server error: ' . $message
+        'error' => 'Server error: ' . $message,
+        'file' => $file,
+        'line' => $line
     ]);
     exit;
-}, E_ALL & ~E_NOTICE);
+}, E_ALL & ~E_NOTICE & ~E_WARNING);
 
 // Start session
 if (session_status() === PHP_SESSION_NONE) {
@@ -79,12 +91,25 @@ try {
     $router->dispatch();
 } catch (Throwable $e) {
     ob_clean();
-    error_log('Fatal error: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+    $errorMessage = 'Fatal error: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine();
+    error_log($errorMessage);
+    error_log('Stack trace: ' . $e->getTraceAsString());
+    
     http_response_code(500);
     header('Content-Type: application/json');
+    
+    // Show detailed error in development, generic in production
+    $showDetails = (ini_get('display_errors') === '1' || ($_ENV['DEBUG'] ?? '0') === '1');
+    $error = $showDetails ? $e->getMessage() : 'Server error occurred';
+    
     echo json_encode([
         'success' => false,
-        'error' => 'Server error occurred'
+        'error' => $error,
+        'details' => $showDetails ? [
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+            'trace' => $e->getTraceAsString()
+        ] : null
     ]);
     exit;
 }

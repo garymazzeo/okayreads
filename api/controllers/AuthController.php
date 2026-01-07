@@ -67,11 +67,23 @@ class AuthController {
             
             Response::success($userModel->getSafe($user), 'Registration successful');
         } catch (PDOException $e) {
-            // Database error - likely table doesn't exist
+            // Database error - likely table doesn't exist or SQL error
             error_log('Registration PDO error: ' . $e->getMessage());
-            Response::error('Database error. Please ensure the users table exists.', 500);
+            error_log('PDO error code: ' . $e->getCode());
+            error_log('SQL State: ' . $e->errorInfo[0] ?? 'unknown');
+            
+            // Provide more helpful error message
+            $errorMsg = 'Database error occurred';
+            if (strpos($e->getMessage(), 'no such table') !== false) {
+                $errorMsg = 'Users table not found. Please run: php database/migrate_users.php';
+            } elseif (strpos($e->getMessage(), 'UNIQUE constraint') !== false) {
+                $errorMsg = 'Username or email already exists';
+            }
+            
+            Response::error($errorMsg, 500);
         } catch (Exception $e) {
             error_log('Registration error: ' . $e->getMessage());
+            error_log('Error trace: ' . $e->getTraceAsString());
             Response::error('Registration failed: ' . $e->getMessage(), 500);
         }
     }

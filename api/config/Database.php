@@ -93,7 +93,7 @@ class Database {
      */
     private function initializeDatabase(): void {
         try {
-            // Check if books table exists
+            // Check if books table exists (indicates if DB is initialized)
             $stmt = $this->connection->query("SELECT name FROM sqlite_master WHERE type='table' AND name='books'");
             if ($stmt->fetch() === false) {
                 // Database is empty, run schema
@@ -102,10 +102,26 @@ class Database {
                     $schema = file_get_contents($schemaFile);
                     $this->connection->exec($schema);
                 }
+            } else {
+                // Check if users table exists (might be missing if DB was created before auth was added)
+                $stmt = $this->connection->query("SELECT name FROM sqlite_master WHERE type='table' AND name='users'");
+                if ($stmt->fetch() === false) {
+                    // Users table is missing, add it
+                    $this->connection->exec("CREATE TABLE IF NOT EXISTS users (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        username TEXT NOT NULL UNIQUE,
+                        email TEXT NOT NULL UNIQUE,
+                        password_hash TEXT NOT NULL,
+                        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+                    )");
+                    $this->connection->exec("CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)");
+                    $this->connection->exec("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)");
+                }
             }
         } catch (PDOException $e) {
-            // Ignore errors - table might already exist or schema might be invalid
-            // This prevents crashes if someone manually modified the DB
+            // Log but don't throw - allows app to continue even if schema issues exist
+            error_log('Database initialization warning: ' . $e->getMessage());
         }
     }
 }

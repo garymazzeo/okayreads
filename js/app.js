@@ -4,8 +4,15 @@
 
 import { API } from './api.js';
 
+// #region agent log
+fetch('http://127.0.0.1:7242/ingest/544894e6-9b90-4a8b-9d06-ec6f49738943',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app.js:8',message:'DOMContentLoaded event fired',data:{booksManagerDefined:typeof booksManager!=='undefined',windowBooksManager:typeof window.booksManager!=='undefined'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+// #endregion
+
 // Initialize on DOM load
 document.addEventListener('DOMContentLoaded', async () => {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/544894e6-9b90-4a8b-9d06-ec6f49738943',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app.js:12',message:'DOMContentLoaded handler entry',data:{booksManagerDefined:typeof booksManager!=='undefined',windowBooksManager:typeof window.booksManager!=='undefined'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
     // Check authentication first
     await checkAuth();
     initializeAuth();
@@ -126,6 +133,9 @@ function initializeAuth() {
 }
 
 function initializeNavigation() {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/544894e6-9b90-4a8b-9d06-ec6f49738943',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app.js:128',message:'initializeNavigation entry',data:{navButtonsCount:document.querySelectorAll('.nav-btn').length,viewsCount:document.querySelectorAll('.view').length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
     const navButtons = document.querySelectorAll('.nav-btn');
     const views = document.querySelectorAll('.view');
 
@@ -139,26 +149,41 @@ function initializeNavigation() {
 
             // Show corresponding view
             views.forEach(view => view.classList.remove('active'));
-            document.getElementById(`${viewName}-view`).classList.add('active');
+            // #region agent log
+            const viewEl=document.getElementById(`${viewName}-view`);fetch('http://127.0.0.1:7242/ingest/544894e6-9b90-4a8b-9d06-ec6f49738943',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app.js:142',message:'Before accessing view element',data:{viewName,elementExists:viewEl!==null,elementId:`${viewName}-view`},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+            // #endregion
+            viewEl.classList.add('active');
         });
     });
 }
 
 function initializeBooksView() {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/544894e6-9b90-4a8b-9d06-ec6f49738943',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app.js:147',message:'initializeBooksView entry',data:{booksManagerDefined:typeof booksManager!=='undefined',windowBooksManager:typeof window.booksManager!=='undefined',booksViewExists:document.getElementById('books-view')!==null,statusFilterExists:document.getElementById('status-filter')!==null,searchInputExists:document.getElementById('search-input')!==null},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
     // Load books on view show
     const booksView = document.getElementById('books-view');
     const statusFilter = document.getElementById('status-filter');
     const searchInput = document.getElementById('search-input');
 
     statusFilter.addEventListener('change', () => {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/544894e6-9b90-4a8b-9d06-ec6f49738943',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app.js:154',message:'statusFilter change handler',data:{booksManagerDefined:typeof booksManager!=='undefined'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+        // #endregion
         booksManager.loadBooks(statusFilter.value);
     });
 
     searchInput.addEventListener('input', () => {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/544894e6-9b90-4a8b-9d06-ec6f49738943',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app.js:158',message:'searchInput input handler',data:{booksManagerDefined:typeof booksManager!=='undefined'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+        // #endregion
         booksManager.filterBooks(searchInput.value);
     });
 
     // Load initial books
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/544894e6-9b90-4a8b-9d06-ec6f49738943',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app.js:162',message:'Before calling booksManager.loadBooks',data:{booksManagerDefined:typeof booksManager!=='undefined',booksManagerType:typeof booksManager},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
     booksManager.loadBooks();
 }
 

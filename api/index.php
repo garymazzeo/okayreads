@@ -32,7 +32,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // Load environment variables
 // Try parent directory first (more secure), then current directory
-$envFile = __DIR__ . '/../../config/okayreads/.env';  // Parent of project root
+$envFile = __DIR__ . '/../config/okayreads/.env';  // Parent of project root
 if (!file_exists($envFile)) {
     $envFile = __DIR__ . '/../.env';  // Fallback to project root
 }

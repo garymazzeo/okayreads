@@ -213,6 +213,9 @@ class BooksManager {
 const booksManager = new BooksManager();
 
 // #region agent log
-fetch('http://127.0.0.1:7242/ingest/544894e6-9b90-4a8b-9d06-ec6f49738943',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'books.js:213',message:'booksManager instance created',data:{booksManagerDefined:typeof booksManager!=='undefined',booksManagerType:typeof booksManager},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+fetch('http://127.0.0.1:7242/ingest/544894e6-9b90-4a8b-9d06-ec6f49738943',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'books.js:213',message:'booksManager instance created',data:{booksManagerDefined:typeof booksManager!=='undefined',booksManagerType:typeof booksManager},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'E'})}).catch(()=>{});
 // #endregion
+
+// Export for use in other modules
+export { booksManager };
 
